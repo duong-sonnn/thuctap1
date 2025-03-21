@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "910812833637",
+    "project_id": "fir-ai-app-c68ff",
+    "storage_bucket": "fir-ai-app-c68ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:910812833637:android:8fa532695d3616bd9ea38c",
+        "android_client_info": {
+          "package_name": "com.sonduong.image_generator_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "910812833637-to714t5i8um28l13ft0foig3b4jdic0e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrlGRmkTFQKE3kolgkSZ0QDdEMPQ24_uY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "910812833637-to714t5i8um28l13ft0foig3b4jdic0e.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "910812833637-10jelbpsuttm1uisp7lvm9qtj72calhs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.imageGeneratorApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
