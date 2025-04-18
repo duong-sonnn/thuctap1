@@ -24,76 +24,111 @@ class _SignInPageState extends State<SignInPage> {
   // Hàm đăng nhập bằng email và mật khẩu
   Future<void> _signInWithEmailAndPassword() async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      print('Attempting email/password sign in...');
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      print('Sign in successful: ${userCredential.user?.email}');
       _navigateToHomePage();
     } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Error: ${e.code} - ${e.message}');
       _showErrorSnackBar(e.message ?? 'Đăng nhập thất bại');
+    } catch (e) {
+      print('Unexpected error: $e');
+      _showErrorSnackBar('Đăng nhập thất bại');
     }
   }
 
   // Hàm đăng nhập bằng Google
   Future<void> _signInWithGoogle() async {
     try {
+      print('Starting Google sign in...');
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return; // Người dùng hủy đăng nhập
+      
+      if (googleUser == null) {
+        print('Google sign in cancelled by user');
+        return;
+      }
+      
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
       );
-      await _auth.signInWithCredential(credential);
+      
+      final userCredential = await _auth.signInWithCredential(credential);
+      print('Firebase sign in successful: ${userCredential.user?.email}');
       _navigateToHomePage();
     } catch (e) {
+      print('Google sign in error: $e');
       _showErrorSnackBar('Đăng nhập bằng Google thất bại');
     }
   }
 
   // Hàm đăng nhập bằng Facebook
-Future<void> _signInWithFacebook() async {
-  try {
-    final LoginResult result = await FacebookAuth.instance.login();
-    if (result.status == LoginStatus.success) {
-      final AccessToken accessToken = result.accessToken!;
-      final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
-      await _auth.signInWithCredential(credential);
-      _navigateToHomePage();
-    } else {
+  Future<void> _signInWithFacebook() async {
+    try {
+      print('Starting Facebook sign in...');
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['email', 'public_profile'],
+      );
+      
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+        final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+        final userCredential = await _auth.signInWithCredential(credential);
+        print('Firebase sign in successful: ${userCredential.user?.email}');
+        _navigateToHomePage();
+      } else {
+        _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
+      }
+    } catch (e) {
+      print('Facebook sign in error: $e');
       _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
     }
-  } catch (e) {
-    _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
   }
-}
-
 
   // Hàm đăng nhập bằng Apple
   Future<void> _signInWithApple() async {
     try {
+      if (!await SignInWithApple.isAvailable()) {
+        _showErrorSnackBar('Apple Sign In không khả dụng trên nền tảng này');
+        return;
+      }
+      
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
       );
+      
+      if (appleCredential.identityToken == null) {
+        _showErrorSnackBar('Đăng nhập bằng Apple thất bại: Không nhận được token');
+        return;
+      }
+      
       final oauthCredential = OAuthProvider("apple.com").credential(
         idToken: appleCredential.identityToken,
         accessToken: appleCredential.authorizationCode,
       );
-      await _auth.signInWithCredential(oauthCredential);
+      
+      final userCredential = await _auth.signInWithCredential(oauthCredential);
+      print('Firebase sign in successful: ${userCredential.user?.email}');
       _navigateToHomePage();
     } catch (e) {
+      print('Apple sign in error: $e');
       _showErrorSnackBar('Đăng nhập bằng Apple thất bại');
     }
   }
 
   // Hàm điều hướng đến trang chính
   void _navigateToHomePage() {
+    print('Navigating to HomePage...');
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => HomePage()),
+      MaterialPageRoute(builder: (_) => const HomePage()),
     );
   }
 
@@ -194,7 +229,7 @@ Future<void> _signInWithFacebook() async {
             ),
           ),
         ),
-),
+      ),
     );
   }
 

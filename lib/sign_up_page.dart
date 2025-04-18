@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'home_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -99,7 +100,7 @@ Future<void> _signInWithFacebook() async {
   void _navigateToHomePage() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Home Page')))),
+      MaterialPageRoute(builder: (_) => const HomePage()),
     );
   }
 
