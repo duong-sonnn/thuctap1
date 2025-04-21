@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
+import 'HistoryPage.dart';
 import 'conectn8n.dart';
 
 class HomePage extends StatefulWidget {
@@ -23,14 +24,12 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _promptController = TextEditingController();
   List<String> _generatedImageUrls = [];
   bool _isLoading = false;
-  bool _isUserMenuOpen = false; // Trạng thái menu người dùng
+  bool _isUserMenuOpen = false;
   int _numberOfImages = 1;
   String? _selectedStyle = 'No style';
   final ApiService _apiService = ApiService();
 
-  // Thời gian timeout cho API (60 giây)
   final int _timeoutSeconds = 60;
-  // Controller để hủy request khi timeout
   Timer? _timeoutTimer;
 
   final List<String> _styleOptions = [
@@ -67,15 +66,12 @@ class _HomePageState extends State<HomePage> {
       _generatedImageUrls = [];
     });
 
-    // Thiết lập timeout
     _timeoutTimer?.cancel();
     _timeoutTimer = Timer(Duration(seconds: _timeoutSeconds), () {
       if (_isLoading && mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Quá thời gian chờ (${_timeoutSeconds}s). Vui lòng thử lại.')),
+          SnackBar(content: Text('Quá thời gian chờ (${_timeoutSeconds}s). Vui lòng thử lại.')),
         );
       }
     });
@@ -92,93 +88,84 @@ class _HomePageState extends State<HomePage> {
       );
 
       final response = await _apiService.sendDataToN8n(requestData);
-      _timeoutTimer?.cancel(); // Hủy timer khi có response
-
+      _timeoutTimer?.cancel();
       if (!mounted) return;
 
-      setState(() {
-        try {
-          if (response.startsWith('❌') || response.startsWith('❗')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(response)),
-            );
-            _isLoading = false;
-            return;
+      // 1) Kiểm tra lỗi từ webhook
+      if (response.startsWith('❌') || response.startsWith('❗')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response)),
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2) Parse JSON và thu URL
+      final jsonData = jsonDecode(response);
+      List<String> urls = [];
+      if (jsonData is Map<String, dynamic>) {
+        if (jsonData['data'] is List) {
+          for (var entry in jsonData['data']) {
+            if (entry is Map<String, dynamic> && entry['imageURL'] is String) {
+              final url = entry['imageURL'] as String;
+              if (url.startsWith('http')) urls.add(url);
+            }
           }
-
-          // final jsonData = jsonDecode(response);
-          // List<String> urls = [];
-
-          // if (jsonData is List) {
-          //   for (var item in jsonData) {
-          //     if (item is Map<String, dynamic> && item['output'] is String) {
-          //       final url = item['output'] as String;
-          //       if (url.startsWith('http')) urls.add(url);
-          //     }
-          //   }
-          // } else if (jsonData is Map<String, dynamic> && jsonData['output'] is String) {
-          //   final url = jsonData['output'] as String;
-          //   if (url.startsWith('http')) urls.add(url);
-          // }
-
-          final jsonData = jsonDecode(response);
-          List<String> urls = [];
-
-          if (jsonData is Map<String, dynamic>) {
-            // 1) Xử lý khi response là Map chứa key "data"
-            if (jsonData['data'] is List) {
-              for (var entry in jsonData['data']) {
-                if (entry is Map<String, dynamic> &&
-                    entry['imageURL'] is String) {
+        } else if (jsonData['output'] is String) {
+          final url = jsonData['output'] as String;
+          if (url.startsWith('http')) urls.add(url);
+        }
+      } else if (jsonData is List) {
+        for (var rootItem in jsonData) {
+          if (rootItem is Map<String, dynamic>) {
+            if (rootItem['data'] is List) {
+              for (var entry in rootItem['data']) {
+                if (entry is Map<String, dynamic> && entry['imageURL'] is String) {
                   final url = entry['imageURL'] as String;
                   if (url.startsWith('http')) urls.add(url);
                 }
               }
-            }
-            // 2) Fallback với key "output" (nếu còn)
-            else if (jsonData['output'] is String) {
-              final url = jsonData['output'] as String;
+            } else if (rootItem['output'] is String) {
+              final url = rootItem['output'] as String;
               if (url.startsWith('http')) urls.add(url);
             }
-          } else if (jsonData is List) {
-            // Xử lý khi response root là List chứa Map có key "data"
-            for (var rootItem in jsonData) {
-              if (rootItem is Map<String, dynamic>) {
-                if (rootItem['data'] is List) {
-                  for (var entry in rootItem['data']) {
-                    if (entry is Map<String, dynamic> &&
-                        entry['imageURL'] is String) {
-                      final url = entry['imageURL'] as String;
-                      if (url.startsWith('http')) urls.add(url);
-                    }
-                  }
-                } else if (rootItem['output'] is String) {
-                  final url = rootItem['output'] as String;
-                  if (url.startsWith('http')) urls.add(url);
-                }
-              }
-            }
           }
-//---
-          if (urls.isNotEmpty) {
-            _generatedImageUrls = urls;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Đã tạo ${urls.length} ảnh thành công')),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Không tìm thấy URL ảnh trong phản hồi')),
-            );
-          }
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi xử lý phản hồi: $e')),
-          );
         }
+      }
+
+      // 3) Lưu lịch sử vào Firestore
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && urls.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('history')
+            .add({
+          'prompt': _promptController.text.trim(),
+          'style': _selectedStyle,
+          'numberOfImages': _numberOfImages,
+          'imageUrls': urls,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      // 4) Cập nhật UI
+      setState(() {
+        _generatedImageUrls = urls;
         _isLoading = false;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            urls.isNotEmpty
+                ? 'Đã tạo ${urls.length} ảnh thành công'
+                : 'Không tìm thấy URL ảnh trong phản hồi',
+          ),
+        ),
+      );
     } catch (e) {
-      _timeoutTimer?.cancel(); // Hủy timer khi có lỗi
+      _timeoutTimer?.cancel();
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -186,6 +173,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
+
 
   Future<void> _saveAllImages() async {
     if (_generatedImageUrls.isEmpty) return;
@@ -564,7 +552,14 @@ class _HomePageState extends State<HomePage> {
                             _buildMenuOption(
                               icon: Icons.history,
                               title: 'Lịch sử tạo ảnh',
-                              onTap: () => _navigateToPage('Lịch sử'),
+                              onTap: () {
+                                _toggleUserMenu();
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const HistoryPage()),
+                                );
+                              },
                             ),
                             _buildMenuOption(
                               icon: Icons.favorite,
