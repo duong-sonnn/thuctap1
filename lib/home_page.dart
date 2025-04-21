@@ -1,15 +1,9 @@
-import 'dart:async'; // Thêm Timer cho timeout
+import 'dart:async'; 
 import 'dart:convert';
-import 'dart:io';
-
+import 'image_actions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_image_gallery_saver/flutter_image_gallery_saver.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:share_plus/share_plus.dart';
 import 'HistoryPage.dart';
 import 'conectn8n.dart';
 
@@ -174,86 +168,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+Future<void> _saveAllImages() async {
+  if (_generatedImageUrls.isEmpty) return;
+  setState(() => _isLoading = true);
 
-  Future<void> _saveAllImages() async {
-    if (_generatedImageUrls.isEmpty) return;
+  final savedCount = await ImageActions.saveImages(_generatedImageUrls);
 
-    // Yêu cầu permission nếu cần
-    if (Platform.isAndroid) {
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-        if (!status.isGranted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cần cấp quyền lưu ảnh')),
-          );
-          return;
-        }
-      }
-    }
+  if (!mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh')),
+  );
+  setState(() => _isLoading = false);
+}
 
-    setState(() => _isLoading = true);
+Future<void> _shareAllImages() async {
+  if (_generatedImageUrls.isEmpty) return;
+  setState(() => _isLoading = true);
 
-    int savedCount = 0;
-    for (final url in _generatedImageUrls) {
-      try {
-        final resp = await http.get(Uri.parse(url));
-        if (resp.statusCode == 200) {
-          // Chỉ truyền vào bodyBytes, không có quality/name
-          await FlutterImageGallerySaver.saveImage(resp.bodyBytes);
-          savedCount++;
-        }
-      } catch (e) {
-        debugPrint('Lỗi khi lưu ảnh $url: $e');
-      }
-    }
+  await ImageActions.shareImages(_generatedImageUrls, _promptController.text);
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content:
-              Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh')),
-    );
-    setState(() => _isLoading = false);
-  }
+  if (!mounted) return;
+  setState(() => _isLoading = false);
+}
 
-  Future<void> _shareAllImages() async {
-    if (_generatedImageUrls.isEmpty) return;
 
-    setState(() => _isLoading = true);
-
-    try {
-      final tempDir = await getTemporaryDirectory();
-      final List<XFile> files = [];
-
-      for (var i = 0; i < _generatedImageUrls.length; i++) {
-        final resp = await http.get(Uri.parse(_generatedImageUrls[i]));
-        if (resp.statusCode == 200) {
-          final file = File('${tempDir.path}/image_$i.jpg');
-          await file.writeAsBytes(resp.bodyBytes);
-          files.add(XFile(file.path));
-        }
-      }
-
-      if (files.isNotEmpty) {
-        await Share.shareXFiles(
-          files,
-          text: 'Ảnh được tạo bởi AI từ prompt: ${_promptController.text}',
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể tải ảnh để chia sẻ')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi chia sẻ ảnh: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
   // Thêm hàm mới để mở menu người dùng
   void _toggleUserMenu() {
