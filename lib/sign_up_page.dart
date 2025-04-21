@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'home_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -60,21 +59,21 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   // Hàm đăng nhập bằng Facebook
-Future<void> _signInWithFacebook() async {
-  try {
-    final LoginResult result = await FacebookAuth.instance.login();
-    if (result.status == LoginStatus.success) {
-      final AccessToken accessToken = result.accessToken!;
-      final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
-      await _auth.signInWithCredential(credential);
-      _navigateToHomePage();
-    } else {
+  Future<void> _signInWithFacebook() async {
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+        final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+        await _auth.signInWithCredential(credential);
+        _navigateToHomePage();
+      } else {
+        _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
+      }
+    } catch (e) {
       _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
     }
-  } catch (e) {
-    _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
   }
-}
 
   // Hàm đăng nhập bằng Apple
   Future<void> _signInWithApple() async {
@@ -98,10 +97,7 @@ Future<void> _signInWithFacebook() async {
 
   // Hàm điều hướng đến trang chính
   void _navigateToHomePage() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
   // Hàm hiển thị thông báo lỗi

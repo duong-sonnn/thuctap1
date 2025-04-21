@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:image_generator_app/home_page.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'sign_in_page.dart';
@@ -22,7 +23,12 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const SignInPage(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SignInPage(),
+        // '/home': (context) => const HomeScreen(),
+         '/home': (context) => const HomePage(),
+      },
     );
   }
 }

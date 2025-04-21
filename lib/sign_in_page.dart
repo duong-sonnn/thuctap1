@@ -4,7 +4,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'sign_up_page.dart';
-import 'home_page.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -125,11 +124,8 @@ class _SignInPageState extends State<SignInPage> {
 
   // Hàm điều hướng đến trang chính
   void _navigateToHomePage() {
-    print('Navigating to HomePage...');
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    print('Navigating to HomeScreen...');
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
   // Hàm hiển thị thông báo lỗi
