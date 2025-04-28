@@ -14,7 +14,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "910812833637-to714t5i8um28l13ft0foig3b4jdic0e.apps.googleusercontent.com",
+          "client_id": "910812833637-d1r31v5d20mrbeaou86c62ftsfnd9ml1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sonduong.image_generator_app",
+            "certificate_hash": "0edc2281929d1773766557dd4f0a477185f9ca58"
+          }
+        },
+        {
+          "client_id": "910812833637-0doodcftc5l24k0ikmijenbporah3tvr.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -27,7 +35,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "910812833637-to714t5i8um28l13ft0foig3b4jdic0e.apps.googleusercontent.com",
+              "client_id": "910812833637-0doodcftc5l24k0ikmijenbporah3tvr.apps.googleusercontent.com",
               "client_type": 3
             },
             {

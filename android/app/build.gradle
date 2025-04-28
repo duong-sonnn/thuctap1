@@ -24,6 +24,7 @@ android {
 
     defaultConfig {
         applicationId "com.sonduong.image_generator_app"
+        // namespace 'com.example.imagegallerysaver'
         minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode 1 // Thay thế flutterVersionCode.toInteger() bằng giá trị cố định

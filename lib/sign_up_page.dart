@@ -16,7 +16,8 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   // Trạng thái checkbox
   bool agreeToTerms = false;
@@ -46,7 +47,8 @@ class _SignUpPageState extends State<SignUpPage> {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return; // Người dùng hủy đăng nhập
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -59,12 +61,30 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   // Hàm đăng nhập bằng Facebook
+  // Future<void> _signInWithFacebook() async {
+  //   try {
+  //     final LoginResult result = await FacebookAuth.instance.login();
+  //     if (result.status == LoginStatus.success) {
+  //       final AccessToken accessToken = result.accessToken!;
+  //       final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+  //       await _auth.signInWithCredential(credential);
+  //       _navigateToHomePage();
+  //     } else {
+  //       _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
+  //     }
+  //   } catch (e) {
+  //     _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
+  //   }
+  // }
   Future<void> _signInWithFacebook() async {
     try {
-      final LoginResult result = await FacebookAuth.instance.login();
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['email', 'public_profile'], // Thêm permissions để đồng bộ
+      );
       if (result.status == LoginStatus.success) {
         final AccessToken accessToken = result.accessToken!;
-        final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+        final OAuthCredential credential =
+            FacebookAuthProvider.credential(accessToken.tokenString);
         await _auth.signInWithCredential(credential);
         _navigateToHomePage();
       } else {
@@ -212,7 +232,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
-                    onPressed: agreeToTerms ? _signUpWithEmailAndPassword : null,
+                    onPressed:
+                        agreeToTerms ? _signUpWithEmailAndPassword : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(vertical: 16),

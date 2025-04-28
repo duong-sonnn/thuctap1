@@ -167,20 +167,49 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
+ //chuc nang luu anh 
+// Future<void> _saveAllImages() async {
+//   if (_generatedImageUrls.isEmpty) return;
+//   setState(() => _isLoading = true);
 
+//   final savedCount = await ImageActions.saveImages(_generatedImageUrls);
+
+//   if (!mounted) return;
+//   ScaffoldMessenger.of(context).showSnackBar(
+//     SnackBar(content: Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh')),
+//   );
+//   setState(() => _isLoading = false);
+// }
 Future<void> _saveAllImages() async {
   if (_generatedImageUrls.isEmpty) return;
+
   setState(() => _isLoading = true);
 
-  final savedCount = await ImageActions.saveImages(_generatedImageUrls);
-
-  if (!mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh')),
-  );
-  setState(() => _isLoading = false);
+  try {
+    final savedCount = await ImageActions.saveImages(_generatedImageUrls);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh'),
+        action: savedCount < _generatedImageUrls.length
+            ? SnackBarAction(label: 'Thử lại', onPressed: _saveAllImages)
+            : null,
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Lỗi khi lưu ảnh: $e')),
+    );
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
+  }
 }
 
+
+
+
+///chuc nang chia se anh
 Future<void> _shareAllImages() async {
   if (_generatedImageUrls.isEmpty) return;
   setState(() => _isLoading = true);
@@ -356,8 +385,9 @@ Future<void> _shareAllImages() async {
                                           fit: BoxFit.cover,
                                           loadingBuilder: (context, child,
                                               loadingProgress) {
-                                            if (loadingProgress == null)
+                                            if (loadingProgress == null) {
                                               return child;
+                                            }
                                             return Center(
                                               child: CircularProgressIndicator(
                                                 value: loadingProgress

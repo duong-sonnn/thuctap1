@@ -12,6 +12,7 @@ class SignInPage extends StatefulWidget {
   _SignInPageState createState() => _SignInPageState();
 }
 
+
 class _SignInPageState extends State<SignInPage> {
   // Controllers cho email và password
   final TextEditingController _emailController = TextEditingController();
@@ -33,11 +34,13 @@ class _SignInPageState extends State<SignInPage> {
     } on FirebaseAuthException catch (e) {
       print('Firebase Auth Error: ${e.code} - ${e.message}');
       _showErrorSnackBar(e.message ?? 'Đăng nhập thất bại');
+      print('Error: $e');
     } catch (e) {
       print('Unexpected error: $e');
       _showErrorSnackBar('Đăng nhập thất bại');
+      print('Error: $e');
     }
-  }
+  } 
 
   // Hàm đăng nhập bằng Google
   Future<void> _signInWithGoogle() async {
@@ -65,7 +68,7 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  // Hàm đăng nhập bằng Facebook
+  //Hàm đăng nhập bằng Facebook
   Future<void> _signInWithFacebook() async {
     try {
       print('Starting Facebook sign in...');
@@ -87,6 +90,8 @@ class _SignInPageState extends State<SignInPage> {
       _showErrorSnackBar('Đăng nhập bằng Facebook thất bại');
     }
   }
+
+
 
   // Hàm đăng nhập bằng Apple
   Future<void> _signInWithApple() async {

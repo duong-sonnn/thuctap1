@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">image_generator_app</string>
-    <string name="facebook_app_id">910812833637</string>
-    <string name="fb_login_protocol_scheme">fb910812833637</string>
-    <string name="facebook_client_token">3a6c450fccb91493dd266087d82173dc</string>
+    <string name="facebook_app_id">1200124175052819</string>
+    <string name="facebook_client_token">8eb237f78896ef6ce819a128fdab0328</string>
 </resources> 
