@@ -1,4 +1,4 @@
-import 'dart:async'; 
+import 'dart:async';
 import 'dart:convert';
 import 'image_actions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -167,453 +167,465 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
- //chuc nang luu anh 
-// Future<void> _saveAllImages() async {
-//   if (_generatedImageUrls.isEmpty) return;
-//   setState(() => _isLoading = true);
 
-//   final savedCount = await ImageActions.saveImages(_generatedImageUrls);
+  Future<void> _saveAllImages() async {
+    if (_generatedImageUrls.isEmpty) return;
 
-//   if (!mounted) return;
-//   ScaffoldMessenger.of(context).showSnackBar(
-//     SnackBar(content: Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh')),
-//   );
-//   setState(() => _isLoading = false);
-// }
-Future<void> _saveAllImages() async {
-  if (_generatedImageUrls.isEmpty) return;
+    setState(() => _isLoading = true);
 
-  setState(() => _isLoading = true);
-
-  try {
-    final savedCount = await ImageActions.saveImages(_generatedImageUrls);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh'),
-        action: savedCount < _generatedImageUrls.length
-            ? SnackBarAction(label: 'Thử lại', onPressed: _saveAllImages)
-            : null,
-      ),
-    );
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Lỗi khi lưu ảnh: $e')),
-    );
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
+    try {
+      final savedCount = await ImageActions.saveImages(_generatedImageUrls);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã lưu $savedCount/${_generatedImageUrls.length} ảnh'),
+          action: savedCount < _generatedImageUrls.length
+              ? SnackBarAction(label: 'Thử lại', onPressed: _saveAllImages)
+              : null,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi lưu ảnh: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
-}
 
+  Future<void> _shareAllImages() async {
+    if (_generatedImageUrls.isEmpty) return;
+    setState(() => _isLoading = true);
 
+    await ImageActions.shareImages(_generatedImageUrls, _promptController.text);
 
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+  }
 
-///chuc nang chia se anh
-Future<void> _shareAllImages() async {
-  if (_generatedImageUrls.isEmpty) return;
-  setState(() => _isLoading = true);
-
-  await ImageActions.shareImages(_generatedImageUrls, _promptController.text);
-
-  if (!mounted) return;
-  setState(() => _isLoading = false);
-}
-
-
-
-  // Thêm hàm mới để mở menu người dùng
   void _toggleUserMenu() {
     setState(() {
       _isUserMenuOpen = !_isUserMenuOpen;
     });
   }
 
-  // Tạo các trang điều hướng mới
   void _navigateToPage(String pageName) {
     setState(() {
       _isUserMenuOpen = false;
     });
 
-    // Hiển thị thông báo (Sau này sẽ thay bằng điều hướng thật)
+    if (pageName == 'Đăng xuất') {
+      _signOut();
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Đang chuyển đến: $pageName')),
     );
+  }
 
-    // TODO: Bổ sung code điều hướng đến các trang khác tại đây
+  Future<void> _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi đăng xuất: $e')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Lấy kích thước màn hình để điều chỉnh giao diện
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 360;
+        final padding = isSmallScreen ? 8.0 : 16.0;
+        final fontSize = isSmallScreen ? 14.0 : 16.0;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Image Generator'),
-        centerTitle: true,
-        actions: [
-          // Nút avatar người dùng để mở menu
-          IconButton(
-            icon: const CircleAvatar(
-              backgroundColor: Colors.blue,
-              child: Icon(Icons.person, color: Colors.white),
-            ),
-            onPressed: _toggleUserMenu,
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          // Phần nội dung chính
-          SingleChildScrollView(
-            padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _promptController,
-                  decoration: InputDecoration(
-                    hintText: 'Mô tả ảnh bạn muốn tạo...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    labelText: 'Mô tả ảnh',
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                  maxLines: 3,
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Image Generator'),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                icon: const CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Icon(Icons.person, color: Colors.white),
                 ),
-                const SizedBox(height: 16),
-                if (isSmallScreen)
-                  // Layout dọc cho màn hình nhỏ
-                  Column(
-                    children: [
-                      _buildStyleDropdown(),
-                      const SizedBox(height: 12),
-                      _buildNumberDropdown(),
-                    ],
-                  )
-                else
-                  // Layout ngang cho màn hình thường
-                  Row(
-                    children: [
-                      Expanded(child: _buildStyleDropdown()),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildNumberDropdown()),
-                    ],
-                  ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _promptController.text.isNotEmpty && !_isLoading
-                      ? _generateImage
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                onPressed: _toggleUserMenu,
+              ),
+            ],
+          ),
+          body: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: EdgeInsets.all(padding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _promptController,
+                      decoration: InputDecoration(
+                        hintText: 'Mô tả ảnh bạn muốn tạo...',
+                        hintMaxLines: 1,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        labelText: 'Mô tả ảnh',
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                      maxLines: 3,
+                      style: TextStyle(fontSize: fontSize),
                     ),
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: _isLoading
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.0,
-                                color: Colors.white,
+                    SizedBox(height: padding),
+                    isSmallScreen
+                        ? Column(
+                            children: [
+                              _buildStyleDropdown(),
+                              SizedBox(height: padding),
+                              _buildNumberDropdown(),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Flexible(child: _buildStyleDropdown()),
+                              SizedBox(width: padding),
+                              Flexible(child: _buildNumberDropdown()),
+                            ],
+                          ),
+                    SizedBox(height: padding),
+                    ElevatedButton(
+                      onPressed: _promptController.text.isNotEmpty && !_isLoading
+                          ? _generateImage
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: padding),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: _isLoading
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text('Đang tạo (${_timeoutSeconds}s)...'),
+                              ],
+                            )
+                          : Text(
+                              'Tạo ảnh',
+                              style: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Text('Đang tạo (${_timeoutSeconds}s)...'),
-                          ],
-                        )
-                      : const Text('Tạo ảnh',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(height: 24),
-                if (_isLoading)
-                  // Hiển thị loading
-                  Column(
-                    children: [
-                      const SizedBox(height: 40),
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Đang tạo ảnh, vui lòng đợi...\nTối đa $_timeoutSeconds giây',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  )
-                else if (_generatedImageUrls.isNotEmpty)
-                  // Hiển thị ảnh đã tạo
-                  Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: _numberOfImages == 4 ? 2 : 1,
-                            childAspectRatio: 1,
-                            mainAxisSpacing: 4,
-                            crossAxisSpacing: 4,
-                            children: _generatedImageUrls
-                                .map((url) => Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        Image.network(
-                                          url,
-                                          fit: BoxFit.cover,
-                                          loadingBuilder: (context, child,
-                                              loadingProgress) {
-                                            if (loadingProgress == null) {
-                                              return child;
-                                            }
-                                            return Center(
-                                              child: CircularProgressIndicator(
-                                                value: loadingProgress
-                                                            .expectedTotalBytes !=
-                                                        null
-                                                    ? loadingProgress
-                                                            .cumulativeBytesLoaded /
-                                                        (loadingProgress
-                                                                .expectedTotalBytes ??
-                                                            1)
-                                                    : null,
-                                              ),
-                                            );
-                                          },
-                                          errorBuilder: (c, e, s) =>
-                                              const Center(
-                                            child: Icon(Icons.error,
-                                                size: 50, color: Colors.red),
-                                          ),
-                                        ),
-                                        // Overlay gradient để làm nền cho text
-                                        Positioned(
-                                          bottom: 0,
-                                          left: 0,
-                                          right: 0,
-                                          child: Container(
-                                            height: 40,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.bottomCenter,
-                                                end: Alignment.topCenter,
-                                                colors: [
-                                                  Colors.black.withOpacity(0.6),
-                                                  Colors.transparent,
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ))
-                                .toList(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        alignment: WrapAlignment.center,
+                    ),
+                    SizedBox(height: padding * 1.5),
+                    if (_isLoading)
+                      Column(
                         children: [
-                          _buildActionButton(
-                            icon: Icons.save_alt,
-                            label: 'Lưu ảnh',
-                            onPressed: !_isLoading ? _saveAllImages : null,
-                            color: Colors.green,
-                          ),
-                          _buildActionButton(
-                            icon: Icons.share,
-                            label: 'Chia sẻ',
-                            onPressed: !_isLoading ? _shareAllImages : null,
-                            color: Colors.orange,
-                          ),
-                          _buildActionButton(
-                            icon: Icons.refresh,
-                            label: 'Tạo lại',
-                            onPressed: !_isLoading
-                                ? () {
-                                    _promptController.clear();
-                                    setState(() => _generatedImageUrls = []);
-                                  }
-                                : null,
-                            color: Colors.blue,
+                          const SizedBox(height: 40),
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Đang tạo ảnh, vui lòng đợi...\nTối đa $_timeoutSeconds giây',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: fontSize),
                           ),
                         ],
-                      ),
-                    ],
-                  )
-                else
-                  // Container trống khi chưa có ảnh
-                  Container(
-                    height: 300,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.image_search,
-                          size: 60,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Nhập mô tả và tạo ảnh',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
+                      )
+                    else if (_generatedImageUrls.isNotEmpty)
+                      Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: GridView.count(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisCount: _numberOfImages == 4
+                                    ? (constraints.maxWidth < 360 ? 1 : 2)
+                                    : 1,
+                                childAspectRatio: 1,
+                                mainAxisSpacing: 4,
+                                crossAxisSpacing: 4,
+                                children: _generatedImageUrls
+                                    .map((url) => Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            Image.network(
+                                              url,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder: (context, child, loadingProgress) {
+                                                if (loadingProgress == null) return child;
+                                                return const Center(
+                                                  child: CircularProgressIndicator(),
+                                                );
+                                              },
+                                              errorBuilder: (c, e, s) => const Center(
+                                                child: Icon(Icons.error, size: 50, color: Colors.red),
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: 0,
+                                              left: 0,
+                                              right: 0,
+                                              child: Container(
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    begin: Alignment.bottomCenter,
+                                                    end: Alignment.topCenter,
+                                                    colors: [
+                                                      Colors.black.withOpacity(0.6),
+                                                      Colors.transparent,
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Overlay menu người dùng
-          if (_isUserMenuOpen)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: _toggleUserMenu,
-                child: Container(
-                  color: Colors.transparent,
-                  height: MediaQuery.of(context).size.height,
-                  child: Column(
-                    children: [
+                          SizedBox(height: padding),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              _buildActionButton(
+                                icon: Icons.save_alt,
+                                label: 'Lưu ảnh',
+                                onPressed: !_isLoading ? _saveAllImages : null,
+                                color: Colors.green,
+                              ),
+                              _buildActionButton(
+                                icon: Icons.share,
+                                label: 'Chia sẻ',
+                                onPressed: !_isLoading ? _shareAllImages : null,
+                                color: Colors.orange,
+                              ),
+                              _buildActionButton(
+                                icon: Icons.refresh,
+                                label: 'Tạo lại',
+                                onPressed: !_isLoading
+                                    ? () {
+                                        _promptController.clear();
+                                        setState(() => _generatedImageUrls = []);
+                                      }
+                                    : null,
+                                color: Colors.blue,
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    else
                       Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        height: 300,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
                         child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildMenuOption(
-                              icon: Icons.history,
-                              title: 'Lịch sử tạo ảnh',
-                              onTap: () {
-                                _toggleUserMenu();
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => const HistoryPage()),
-                                );
-                              },
+                            Icon(
+                              Icons.image_search,
+                              size: 60,
+                              color: Colors.grey[400],
                             ),
-                            _buildMenuOption(
-                              icon: Icons.favorite,
-                              title: 'Ảnh đã lưu',
-                              onTap: () => _navigateToPage('Ảnh đã lưu'),
-                            ),
-                            _buildMenuOption(
-                              icon: Icons.settings,
-                              title: 'Cài đặt',
-                              onTap: () => _navigateToPage('Cài đặt'),
-                            ),
-                            _buildMenuOption(
-                              icon: Icons.help_outline,
-                              title: 'Trợ giúp',
-                              onTap: () => _navigateToPage('Trợ giúp'),
-                            ),
-                            _buildMenuOption(
-                              icon: Icons.account_circle,
-                              title: 'Thông tin tài khoản',
-                              onTap: () => _navigateToPage('Tài khoản'),
-                            ),
-                            const SizedBox(height: 8),
-                            const Divider(),
-                            const SizedBox(height: 8),
-                            _buildMenuOption(
-                              icon: Icons.logout,
-                              title: 'Đăng xuất',
-                              onTap: () => _navigateToPage('Đăng xuất'),
-                              isDestructive: true,
+                            SizedBox(height: padding),
+                            Text(
+                              'Nhập mô tả và tạo ảnh',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: fontSize,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
-            ),
-        ],
-      ),
+              if (_isUserMenuOpen)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _toggleUserMenu,
+                    child: SafeArea(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.3),
+                        height: MediaQuery.of(context).size.height,
+                        child: Column(
+                          children: [
+                            Container(
+                              width: constraints.maxWidth < 360 ? constraints.maxWidth : 360,
+                              color: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildMenuOption(
+                                    icon: Icons.history,
+                                    title: 'Lịch sử tạo ảnh',
+                                    onTap: () {
+                                      _toggleUserMenu();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const HistoryPage()),
+                                      );
+                                    },
+                                  ),
+                                  _buildMenuOption(
+                                    icon: Icons.favorite,
+                                    title: 'Ảnh đã lưu',
+                                    onTap: () => _navigateToPage('Ảnh đã lưu'),
+                                  ),
+                                  _buildMenuOption(
+                                    icon: Icons.settings,
+                                    title: 'Cài đặt',
+                                    onTap: () => _navigateToPage('Cài đặt'),
+                                  ),
+                                  _buildMenuOption(
+                                    icon: Icons.help_outline,
+                                    title: 'Trợ giúp',
+                                    onTap: () => _navigateToPage('Trợ giúp'),
+                                  ),
+                                  _buildMenuOption(
+                                    icon: Icons.account_circle,
+                                    title: 'Thông tin tài khoản',
+                                    onTap: () => _navigateToPage('Tài khoản'),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Divider(),
+                                  const SizedBox(height: 8),
+                                  _buildMenuOption(
+                                    icon: Icons.logout,
+                                    title: 'Đăng xuất',
+                                    onTap: () => _navigateToPage('Đăng xuất'),
+                                    isDestructive: true,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  // Widget cho dropdown style
   Widget _buildStyleDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedStyle,
-      decoration: InputDecoration(
-        labelText: 'Phong cách',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200),
+      child: DropdownButtonFormField<String>(
+        value: _selectedStyle,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: 'Phong cách',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey[50],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
-        filled: true,
-        fillColor: Colors.grey[50],
+        items: _styleOptions
+            .map((style) => DropdownMenuItem(
+                  value: style,
+                  child: Text(
+                    style,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 360 ? 14 : 16,
+                    ),
+                  ),
+                ))
+            .toList(),
+        onChanged: (val) => setState(() => _selectedStyle = val),
+        menuMaxHeight: MediaQuery.of(context).size.height * 0.4,
       ),
-      items: _styleOptions
-          .map((style) => DropdownMenuItem(
-                value: style,
-                child: Text(style),
-              ))
-          .toList(),
-      onChanged: (val) => setState(() => _selectedStyle = val),
     );
   }
 
-  // Widget cho dropdown số lượng
   Widget _buildNumberDropdown() {
-    return DropdownButtonFormField<int>(
-      value: _numberOfImages,
-      decoration: InputDecoration(
-        labelText: 'Số lượng ảnh',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200),
+      child: DropdownButtonFormField<int>(
+        value: _numberOfImages,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: 'Số lượng ảnh',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey[50],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
-        filled: true,
-        fillColor: Colors.grey[50],
+        items: const [
+          DropdownMenuItem(
+            value: 1,
+            child: Text(
+              '1 ảnh',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          DropdownMenuItem(
+            value: 4,
+            child: Text(
+              '4 ảnh',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+        onChanged: (val) => setState(() => _numberOfImages = val!),
+        menuMaxHeight: MediaQuery.of(context).size.height * 0.4,
       ),
-      items: const [
-        DropdownMenuItem(value: 1, child: Text('1 ảnh')),
-        DropdownMenuItem(value: 4, child: Text('4 ảnh')),
-      ],
-      onChanged: (val) => setState(() => _numberOfImages = val!),
     );
   }
 
-  // Widget cho nút hành động
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -635,7 +647,6 @@ Future<void> _shareAllImages() async {
     );
   }
 
-  // Widget cho tùy chọn menu
   Widget _buildMenuOption({
     required IconData icon,
     required String title,
